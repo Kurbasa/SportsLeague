@@ -1,11 +1,9 @@
-using System.Net.Http.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SportsLeague.Infrastructure.Persistence;
-using SportsLeague.Infrastructure.Services;
 using Testcontainers.PostgreSql;
 
 namespace SportsLeague.Tests.Integration;
@@ -28,7 +26,6 @@ public sealed class LeagueApiFactory : WebApplicationFactory<Program>, IAsyncLif
 
         builder.ConfigureServices(services =>
         {
-            // Ensure DbContext uses container connection string
             var descriptor = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<LeagueDbContext>));
             if (descriptor is not null) services.Remove(descriptor);
 
@@ -58,10 +55,6 @@ public sealed class LeagueApiFactory : WebApplicationFactory<Program>, IAsyncLif
         using var scope = Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<LeagueDbContext>();
         await db.Database.MigrateAsync();
-
-        // Pre-fill for integration tests (>= 10k rows) per requirements.
-        var seeder = scope.ServiceProvider.GetRequiredService<LeagueSeeder>();
-        await seeder.SeedIfEmptyAsync(10_000, CancellationToken.None);
     }
 
     public new async Task DisposeAsync()
